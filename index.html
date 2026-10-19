@@ -6,7 +6,7 @@
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src 'unsafe-inline' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Тетрис</title>
-<style>:root{color-scheme:light dark;background:light-dark(rgb(255 255 255), rgb(24 24 24))}html,body{margin:0}body{box-sizing:border-box;padding:1rem;background:inherit}iframe{display:block;width:100%;height:calc(100vh - 2rem);margin:0 auto;border:0}</style>
+<style>:root{color-scheme:light dark;background:light-dark(rgb(255 255 255), rgb(24 24 24))}html,body{margin:0}body{box-sizing:border-box;padding:1rem;background:inherit}iframe{display:block;width:100%;height:calc(100vh - 2rem)!important;height:calc(100dvh - 2rem)!important;margin:0 auto;border:0}</style>
 
 </head>
 <body>
@@ -1788,25 +1788,29 @@ html&gt;body{padding:0}&lt;/style&gt;
 &lt;/script&gt;
 &lt;div id=&quot;our-tetris&quot;&gt;
 &lt;style&gt;
-#our-tetris{color:var(--foreground);max-width:540px;margin:auto}
-#our-tetris .heading{display:flex;gap:16px;align-items:center;margin-bottom:16px;padding-right:90px}
+#our-tetris{--screen-height:100vh;--side-width:176px;--layout-gap:24px;--board-width:min(calc((var(--screen-height) - 64px)/2),calc(100vw - var(--side-width) - var(--layout-gap)));color:var(--foreground);width:calc(var(--board-width) + var(--side-width) + var(--layout-gap));max-width:100%;margin:auto}
+@supports(height:100dvh){#our-tetris{--screen-height:100dvh}}
+#our-tetris .heading{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:16px}
 #our-tetris h2{margin:0}
-#our-tetris .layout{display:grid;grid-template-columns:minmax(0,280px) minmax(104px,1fr);gap:20px;align-items:start}
-#our-tetris .field{position:relative}
+#our-tetris .layout{display:grid;grid-template-columns:minmax(0,var(--board-width)) var(--side-width);grid-template-rows:auto auto 1fr;gap:16px var(--layout-gap);align-items:start}
+#our-tetris .field{position:relative;grid-column:1;grid-row:1/4}
 #our-tetris .board{display:block;width:100%;aspect-ratio:1/2;background:var(--secondary);border-radius:8px}
 #our-tetris .grid{stroke:var(--border);stroke-width:.5}
 #our-tetris .veil{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:color-mix(in srgb,var(--background) 90%,transparent);border-radius:8px;text-align:center}
 #our-tetris .veil[hidden]{display:none}
-#our-tetris .side{display:flex;flex-direction:column;gap:20px}
-#our-tetris .metric{display:flex;flex-direction:column;gap:4px}
+#our-tetris .side{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 8px;grid-column:2;grid-row:1}
+#our-tetris .side&gt;div:not(.metric),#our-tetris .side&gt;button{grid-column:1/-1}
+#our-tetris .metric{display:flex;flex-direction:column;gap:4px;min-width:0;overflow-wrap:anywhere}
 #our-tetris .preview{display:block;width:100%;max-width:120px;height:72px;margin-top:8px}
-#our-tetris .controls{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
-#our-tetris .help{display:flex;flex-direction:column;gap:4px;margin-top:16px}
+#our-tetris .controls{display:flex;flex-wrap:wrap;gap:6px;grid-column:2;grid-row:2}
+#our-tetris .help{display:flex;flex-direction:column;gap:4px;grid-column:2;grid-row:3}
 #our-tetris .I{fill:var(--blue)} #our-tetris .J{fill:var(--purple)} #our-tetris .L{fill:var(--orange)} #our-tetris .O{fill:var(--yellow)} #our-tetris .S{fill:var(--green)} #our-tetris .T{fill:var(--primary)} #our-tetris .Z{fill:var(--red)}
 #our-tetris .ghost{fill:var(--foreground);opacity:.15}
 #our-tetris .shine{fill:var(--background);opacity:.3}
 #our-tetris button[data-action]{touch-action:manipulation}
-@media(max-width:400px){#our-tetris .layout{grid-template-columns:minmax(0,1fr) 104px;gap:12px}#our-tetris .side{gap:16px}}
+@media(max-width:640px){#our-tetris{--side-width:104px;--layout-gap:12px;--board-width:min(calc((var(--screen-height) - 190px)/2),calc(100vw - var(--side-width) - var(--layout-gap)))}#our-tetris .layout{gap:12px}#our-tetris .field{grid-row:1}#our-tetris .side{display:flex;flex-direction:column;gap:12px}#our-tetris .preview{height:52px}#our-tetris .controls{grid-column:1/-1;grid-row:2}#our-tetris .help{grid-column:1/-1;grid-row:3}}
+@media(max-height:600px){#our-tetris .side{gap:8px}#our-tetris .preview{height:44px}}
+@media(pointer:coarse){#our-tetris .help{display:none}}
 &lt;/style&gt;
 &lt;div class=&quot;heading&quot;&gt;&lt;h2&gt;Тетрис&lt;/h2&gt;&lt;span class=&quot;text-small text-muted&quot; data-status aria-live=&quot;polite&quot;&gt;Готовы?&lt;/span&gt;&lt;/div&gt;
 &lt;div class=&quot;layout&quot;&gt;
@@ -1820,8 +1824,8 @@ html&gt;body{padding:0}&lt;/style&gt;
   &lt;div class=&quot;metric&quot;&gt;&lt;span class=&quot;text-small text-muted&quot;&gt;Уровень&lt;/span&gt;&lt;span class=&quot;tabular-nums&quot; data-level&gt;1&lt;/span&gt;&lt;/div&gt;
   &lt;div&gt;&lt;span class=&quot;text-small text-muted&quot;&gt;Следующая&lt;/span&gt;&lt;svg class=&quot;preview&quot; viewBox=&quot;0 0 120 72&quot; role=&quot;img&quot; aria-label=&quot;Следующая фигура&quot;&gt;&lt;g data-next&gt;&lt;/g&gt;&lt;/svg&gt;&lt;/div&gt;
   &lt;button type=&quot;button&quot; class=&quot;btn&quot; data-pause disabled&gt;Пауза&lt;/button&gt;
+  &lt;button type=&quot;button&quot; class=&quot;btn btn-ghost&quot; data-restart hidden&gt;Новая игра&lt;/button&gt;
  &lt;/div&gt;
-&lt;/div&gt;
 &lt;div class=&quot;controls&quot; aria-label=&quot;Управление фигурами&quot;&gt;
  &lt;button type=&quot;button&quot; class=&quot;btn&quot; data-action=&quot;left&quot; aria-label=&quot;Влево&quot;&gt;←&lt;/button&gt;
  &lt;button type=&quot;button&quot; class=&quot;btn&quot; data-action=&quot;rotate&quot; aria-label=&quot;Повернуть&quot;&gt;↻&lt;/button&gt;
@@ -1830,7 +1834,7 @@ html&gt;body{padding:0}&lt;/style&gt;
  &lt;button type=&quot;button&quot; class=&quot;btn&quot; data-action=&quot;drop&quot;&gt;Сбросить ↓↓&lt;/button&gt;
 &lt;/div&gt;
 &lt;div class=&quot;help text-small text-muted&quot;&gt;&lt;span&gt;← → — движение · ↑ — поворот · ↓ — быстрее&lt;/span&gt;&lt;span&gt;Пробел — сбросить · P — пауза&lt;/span&gt;&lt;/div&gt;
-&lt;div class=&quot;controls&quot;&gt;&lt;button type=&quot;button&quot; class=&quot;btn btn-ghost&quot; data-restart hidden&gt;Новая игра&lt;/button&gt;&lt;/div&gt;
+&lt;/div&gt;
 &lt;span class=&quot;sr-only&quot; data-announcement aria-live=&quot;polite&quot;&gt;&lt;/span&gt;
 &lt;script&gt;
 (() =&gt; {
