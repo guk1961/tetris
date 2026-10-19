@@ -1,0 +1,4 @@
+.local/
+play-tetris.html
+__pycache__/
+*.pyc

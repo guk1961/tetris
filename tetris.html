@@ -1,0 +1,99 @@
+<div id="our-tetris">
+<style>
+#our-tetris{color:var(--foreground);max-width:540px;margin:auto}
+#our-tetris .heading{display:flex;gap:16px;align-items:center;margin-bottom:16px;padding-right:90px}
+#our-tetris h2{margin:0}
+#our-tetris .layout{display:grid;grid-template-columns:minmax(0,280px) minmax(104px,1fr);gap:20px;align-items:start}
+#our-tetris .field{position:relative}
+#our-tetris .board{display:block;width:100%;aspect-ratio:1/2;background:var(--secondary);border-radius:8px}
+#our-tetris .grid{stroke:var(--border);stroke-width:.5}
+#our-tetris .veil{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:color-mix(in srgb,var(--background) 90%,transparent);border-radius:8px;text-align:center}
+#our-tetris .veil[hidden]{display:none}
+#our-tetris .side{display:flex;flex-direction:column;gap:20px}
+#our-tetris .metric{display:flex;flex-direction:column;gap:4px}
+#our-tetris .preview{display:block;width:100%;max-width:120px;height:72px;margin-top:8px}
+#our-tetris .controls{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+#our-tetris .help{display:flex;flex-direction:column;gap:4px;margin-top:16px}
+#our-tetris .I{fill:var(--blue)} #our-tetris .J{fill:var(--purple)} #our-tetris .L{fill:var(--orange)} #our-tetris .O{fill:var(--yellow)} #our-tetris .S{fill:var(--green)} #our-tetris .T{fill:var(--primary)} #our-tetris .Z{fill:var(--red)}
+#our-tetris .ghost{fill:var(--foreground);opacity:.15}
+#our-tetris .shine{fill:var(--background);opacity:.3}
+#our-tetris button[data-action]{touch-action:manipulation}
+@media(max-width:400px){#our-tetris .layout{grid-template-columns:minmax(0,1fr) 104px;gap:12px}#our-tetris .side{gap:16px}}
+</style>
+<div class="heading"><h2>Тетрис</h2><span class="text-small text-muted" data-status aria-live="polite">Готовы?</span></div>
+<div class="layout">
+ <div class="field">
+  <svg class="board" viewBox="0 0 240 480" role="img" aria-label="Игровое поле: 10 столбцов и 20 рядов"><g data-grid></g><g data-cells></g></svg>
+  <div class="veil" data-veil><span data-message>Собираем полные линии</span><button type="button" class="btn btn-primary" data-play>Начать игру</button></div>
+ </div>
+ <div class="side">
+  <div class="metric"><span class="text-small text-muted">Счёт</span><span class="tabular-nums" data-score>0</span></div>
+  <div class="metric"><span class="text-small text-muted">Линии</span><span class="tabular-nums" data-lines>0</span></div>
+  <div class="metric"><span class="text-small text-muted">Уровень</span><span class="tabular-nums" data-level>1</span></div>
+  <div><span class="text-small text-muted">Следующая</span><svg class="preview" viewBox="0 0 120 72" role="img" aria-label="Следующая фигура"><g data-next></g></svg></div>
+  <button type="button" class="btn" data-pause disabled>Пауза</button>
+ </div>
+</div>
+<div class="controls" aria-label="Управление фигурами">
+ <button type="button" class="btn" data-action="left" aria-label="Влево">←</button>
+ <button type="button" class="btn" data-action="rotate" aria-label="Повернуть">↻</button>
+ <button type="button" class="btn" data-action="right" aria-label="Вправо">→</button>
+ <button type="button" class="btn" data-action="down" aria-label="Вниз">↓</button>
+ <button type="button" class="btn" data-action="drop">Сбросить ↓↓</button>
+</div>
+<div class="help text-small text-muted"><span>← → — движение · ↑ — поворот · ↓ — быстрее</span><span>Пробел — сбросить · P — пауза</span></div>
+<div class="controls"><button type="button" class="btn btn-ghost" data-restart hidden>Новая игра</button></div>
+<span class="sr-only" data-announcement aria-live="polite"></span>
+<script>
+(() => {
+'use strict';
+const SHAPES={I:[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],J:[[1,0,0],[1,1,1],[0,0,0]],L:[[0,0,1],[1,1,1],[0,0,0]],O:[[1,1],[1,1]],S:[[0,1,1],[1,1,0],[0,0,0]],T:[[0,1,0],[1,1,1],[0,0,0]],Z:[[1,1,0],[0,1,1],[0,0,0]]};
+class Tetris {
+ constructor(){this.reset()}
+ reset(){this.board=Array.from({length:20},()=>Array(10).fill(null));this.bag=[];this.score=0;this.lines=0;this.over=false;this.next=this.drawType();this.spawn()}
+ get level(){return 1+Math.floor(this.lines/10)}
+ get interval(){return Math.max(85,800*Math.pow(.8,this.level-1))}
+ drawType(){if(!this.bag.length){this.bag=Object.keys(SHAPES);for(let i=6;i>0;i--){const j=Math.floor(Math.random()*(i+1));[this.bag[i],this.bag[j]]=[this.bag[j],this.bag[i]]}}return this.bag.pop()}
+ spawn(){const type=this.next;this.active={type,m:SHAPES[type].map(r=>r.slice()),x:Math.floor((10-SHAPES[type].length)/2),y:0};this.next=this.drawType();if(!this.fits(this.active.m,this.active.x,this.active.y))this.over=true}
+ fits(m,x,y){return m.every((r,dy)=>r.every((v,dx)=>!v||(x+dx>=0&&x+dx<10&&y+dy<20&&(y+dy<0||!this.board[y+dy][x+dx]))))}
+ move(dx,dy){if(this.over)return false;const a=this.active;if(!this.fits(a.m,a.x+dx,a.y+dy))return false;a.x+=dx;a.y+=dy;return true}
+ rotate(){if(this.over)return false;const a=this.active;if(a.type==='O')return true;const m=a.m[0].map((_,x)=>a.m.map(r=>r[x]).reverse());for(const [dx,dy] of [[0,0],[-1,0],[1,0],[-2,0],[2,0],[0,-1],[-1,-1],[1,-1],[0,-2]]){if(this.fits(m,a.x+dx,a.y+dy)){a.m=m;a.x+=dx;a.y+=dy;return true}}return false}
+ lock(){if(this.over)return 0;let above=false;this.active.m.forEach((r,dy)=>r.forEach((v,dx)=>{if(v){const y=this.active.y+dy;if(y<0)above=true;else this.board[y][this.active.x+dx]=this.active.type}}));if(above){this.over=true;return 0}const remaining=this.board.filter(r=>r.some(v=>!v));const cleared=20-remaining.length;this.score+=[0,100,300,500,800][cleared]*this.level;this.lines+=cleared;this.board=[...Array.from({length:cleared},()=>Array(10).fill(null)),...remaining];this.spawn();return cleared}
+ step(soft=false){if(this.over)return 0;if(this.move(0,1)){if(soft)this.score++;return 0}return this.lock()}
+ drop(){if(this.over)return 0;while(this.move(0,1))this.score+=2;return this.lock()}
+ ghostY(){let y=this.active.y;while(this.fits(this.active.m,this.active.x,y+1))y++;return y}
+}
+const root=document.getElementById('our-tetris'),el=s=>root.querySelector(s),game=new Tetris(),ns='http://www.w3.org/2000/svg';
+let mode='ready',elapsed=0,last=0,frame=0,lastPublished='';
+function rect(parent,x,y,type,ghost=false,size=24){const r=document.createElementNS(ns,'rect');for(const [k,v]of Object.entries({x:x+1,y:y+1,width:size-2,height:size-2,rx:3,class:ghost?'ghost':type}))r.setAttribute(k,v);parent.appendChild(r);if(!ghost){const s=document.createElementNS(ns,'rect');for(const [k,v]of Object.entries({x:x+4,y:y+4,width:size-8,height:3,rx:1,class:'shine'}))s.setAttribute(k,v);parent.appendChild(s)}}
+for(let x=1;x<10;x++){const l=document.createElementNS(ns,'path');l.setAttribute('d',`M${x*24} 0V480`);l.setAttribute('class','grid');el('[data-grid]').appendChild(l)}
+for(let y=1;y<20;y++){const l=document.createElementNS(ns,'path');l.setAttribute('d',`M0 ${y*24}H240`);l.setAttribute('class','grid');el('[data-grid]').appendChild(l)}
+function paint(){
+ const cells=el('[data-cells]'),preview=el('[data-next]');cells.replaceChildren();preview.replaceChildren();
+ game.board.forEach((r,y)=>r.forEach((v,x)=>{if(v)rect(cells,x*24,y*24,v)}));
+ const a=game.active;if(!game.over){const gy=game.ghostY();a.m.forEach((r,dy)=>r.forEach((v,dx)=>{if(v&&gy+dy>=0)rect(cells,(a.x+dx)*24,(gy+dy)*24,a.type,true)}));a.m.forEach((r,dy)=>r.forEach((v,dx)=>{if(v&&a.y+dy>=0)rect(cells,(a.x+dx)*24,(a.y+dy)*24,a.type)}))}
+ const occupied=[];SHAPES[game.next].forEach((r,y)=>r.forEach((v,x)=>{if(v)occupied.push([x,y])}));
+ const minX=Math.min(...occupied.map(p=>p[0])),maxX=Math.max(...occupied.map(p=>p[0])),minY=Math.min(...occupied.map(p=>p[1])),maxY=Math.max(...occupied.map(p=>p[1]));
+ const ox=(120-(maxX-minX+1)*22)/2,oy=(72-(maxY-minY+1)*22)/2;occupied.forEach(([x,y])=>rect(preview,ox+(x-minX)*22,oy+(y-minY)*22,game.next,false,22));
+ preview.parentElement.setAttribute('aria-label','Следующая фигура: '+game.next);
+ el('[data-score]').textContent=game.score.toLocaleString('ru-RU');el('[data-lines]').textContent=game.lines;el('[data-level]').textContent=game.level;
+ el('[data-status]').textContent=({ready:'Готовы?',playing:'В игре',paused:'Пауза',over:'Игра окончена'})[mode];
+ el('[data-veil]').hidden=mode==='playing';el('[data-message]').textContent=mode==='over'?'Игра окончена':mode==='paused'?'Пауза':'Собираем полные линии';el('[data-play]').textContent=mode==='paused'?'Продолжить':mode==='over'?'Ещё раз':'Начать игру';
+ el('[data-pause]').disabled=mode==='ready'||mode==='over';el('[data-pause]').textContent=mode==='paused'?'Продолжить':'Пауза';el('[data-restart]').hidden=mode==='ready';root.querySelectorAll('[data-action]').forEach(b=>b.disabled=mode!=='playing');
+}
+function save(){if(window.openai&&window.openai.setWidgetState){const state={modelContent:{score:game.score,lines:game.lines,level:game.level,status:mode},privateContent:{board:game.board,active:game.active,next:game.next,bag:game.bag,score:game.score,lines:game.lines,over:game.over,mode}};lastPublished=JSON.stringify(state.privateContent);window.openai.setWidgetState(state).catch(()=>{})}}
+function restore(state){const s=state&&state.privateContent,typeOK=t=>Object.prototype.hasOwnProperty.call(SHAPES,t);if(!s||!Array.isArray(s.board)||s.board.length!==20||!s.board.every(r=>Array.isArray(r)&&r.length===10&&r.every(v=>v===null||typeOK(v)))||!s.active||!typeOK(s.active.type)||!typeOK(s.next)||!Array.isArray(s.bag)||!s.bag.every(typeOK)||!Number.isInteger(s.score)||s.score<0||!Number.isInteger(s.lines)||s.lines<0)return;const a=s.active;if(!Array.isArray(a.m)||a.m.length!==SHAPES[a.type].length||!a.m.every(r=>Array.isArray(r)&&r.length===a.m.length&&r.every(v=>v===0||v===1))||a.m.flat().filter(Boolean).length!==4||!Number.isInteger(a.x)||!Number.isInteger(a.y)||a.y < -4||a.y>20)return;const previous=game.board;game.board=s.board;if(!s.over&&!game.fits(a.m,a.x,a.y)){game.board=previous;return}Object.assign(game,{board:s.board,active:a,next:s.next,bag:s.bag,score:s.score,lines:s.lines,over:!!s.over});mode=s.over?'over':s.mode==='ready'?'ready':'paused';elapsed=0;paint()}
+function stop(){cancelAnimationFrame(frame);frame=0;last=0}
+function settle(cleared){if(game.over){mode='over';stop();el('[data-announcement]').textContent='Игра окончена. Счёт '+game.score}else if(cleared)el('[data-announcement]').textContent='Убрано линий: '+cleared+'. Счёт '+game.score;paint();save()}
+function loop(time){if(mode!=='playing')return;if(last)elapsed+=Math.min(time-last,1000);last=time;if(elapsed>=game.interval){elapsed=0;settle(game.step())}if(mode==='playing')frame=requestAnimationFrame(loop)}
+function start(reset=false){stop();if(reset||mode==='over')game.reset();mode='playing';elapsed=0;paint();save();el('[data-pause]').focus();frame=requestAnimationFrame(loop)}
+function pause(){if(mode==='playing'){mode='paused';stop();paint();save()}else if(mode==='paused')start()}
+function action(name){if(mode!=='playing')return;let cleared=0;if(name==='left')game.move(-1,0);if(name==='right')game.move(1,0);if(name==='rotate')game.rotate();if(name==='down'){cleared=game.step(true);elapsed=0}if(name==='drop'){cleared=game.drop();elapsed=0}settle(cleared)}
+el('[data-play]').addEventListener('click',()=>start());el('[data-pause]').addEventListener('click',pause);el('[data-restart]').addEventListener('click',()=>start(true));root.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click',()=>action(b.dataset.action)));
+document.addEventListener('keydown',e=>{if(!root.contains(document.activeElement)||e.ctrlKey||e.metaKey||e.altKey)return;const map={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'rotate',ArrowDown:'down',' ':'drop'};if(e.code==='KeyP'){e.preventDefault();if(!e.repeat)pause();return}if(mode!=='playing'||!map[e.key])return;e.preventDefault();if(e.repeat&&(e.key===' '||e.key==='ArrowUp'))return;action(map[e.key])});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&mode==='playing')pause()});window.addEventListener('blur',()=>{if(mode==='playing')pause()});
+window.addEventListener('openai:set_globals',e=>{if(e.detail&&e.detail.globals&&e.detail.globals.widgetState){const state=e.detail.globals.widgetState;if(JSON.stringify(state.privateContent)===lastPublished)return;stop();restore(state);if(mode==='playing'){last=0;frame=requestAnimationFrame(loop)}}});
+paint();if(window.openai&&window.openai.widgetState)restore(window.openai.widgetState);
+})();
+</script>
+</div>
